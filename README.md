@@ -13,6 +13,7 @@ MVP funcional con:
 - `idempiere-cli install --dry-run`
 - `idempiere-cli install --profile perfil.yml`
 - `idempiere-cli install --interactive`
+- Opciones interactivas para instalar Nginx y crear un site reverse proxy.
 - Lectura de perfiles YAML.
 - Instalación de dependencias opcional durante `idempiere-cli install`, no durante instalación del CLI.
 - Generación de `idempiereEnv.properties`.
@@ -131,11 +132,11 @@ En modo interactivo:
 idempiere-cli install --interactive
 ```
 
-El CLI detecta faltantes y pregunta cuáles instalar. En el selector aparecen con nombres descriptivos, por ejemplo `Java 17 JDK`, `PostgreSQL 15 server` y `PostgreSQL client tools (psql, pg_dump, pg_restore)`.
+El CLI detecta faltantes y pregunta cuáles instalar. En el selector aparecen con nombres descriptivos, por ejemplo `Java 17 JDK`, `PostgreSQL 15 server` y `PostgreSQL 15 client tools (psql, pg_dump, pg_restore)`.
 
 Si seleccionas `postgresql-15` y el paquete no existe en los repositorios base del sistema, el CLI configura automáticamente el repositorio oficial PostgreSQL PGDG antes de instalarlo.
 
-Durante la instalación real, los comandos largos muestran salida en vivo para que puedas ver el progreso de `apt`, descarga, extracción y scripts internos de iDempiere.
+Durante la instalación real, `apt` se muestra de forma compacta y guarda la salida completa en logs. La descarga, extracción y scripts internos de iDempiere muestran salida en vivo para facilitar diagnóstico.
 
 En modo perfil:
 
@@ -276,7 +277,18 @@ El instalador Python hace:
 14. Ejecuta `sign-database-build-alt.sh`.
 15. Crea el usuario Linux `idempiere` si no existe.
 16. Aplica propietario `idempiere:idempiere` a la carpeta instalada.
-17. Crea y habilita servicio systemd si `install.create_service: true`.
+17. Crea, habilita y arranca el servicio systemd si `install.create_service: true`.
+
+## Nginx
+
+Desde el menú interactivo puedes usar:
+
+- `Instalar Nginx`.
+- `Crear site Nginx`.
+- `Probar Nginx`.
+- `Recargar Nginx`.
+
+El site Nginx genera un reverse proxy básico hacia el puerto web de iDempiere, por defecto `8080`.
 
 ## Requisitos recomendados
 

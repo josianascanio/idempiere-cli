@@ -80,6 +80,7 @@ def run_main_menu(help_text: str) -> None:
     from idempiere_cli.commands.check import check_command
     from idempiere_cli.commands.detect import detect_command
     from idempiere_cli.commands.install import execute_install
+    from idempiere_cli.commands.nginx import create_site, install_nginx, reload_nginx, test_nginx
 
     while True:
         console.print(Panel("Selecciona una acción. Las opciones de detección y validación regresan al menú automáticamente.", title="Menú principal", style="cyan"))
@@ -92,6 +93,10 @@ def run_main_menu(help_text: str) -> None:
                 "Simular instalación interactiva (--dry-run)",
                 "Instalar desde perfil YAML",
                 "Simular desde perfil YAML (--dry-run)",
+                "Instalar Nginx",
+                "Crear site Nginx",
+                "Probar Nginx",
+                "Recargar Nginx",
                 "Ver ayuda",
                 "Salir",
             ],
@@ -110,8 +115,19 @@ def run_main_menu(help_text: str) -> None:
                 execute_install(profile=_ask_profile_path(), dry_run=False)
             elif action == "Simular desde perfil YAML (--dry-run)":
                 execute_install(profile=_ask_profile_path(), dry_run=True)
+            elif action == "Instalar Nginx":
+                install_nginx()
+            elif action == "Crear site Nginx":
+                domain = inquirer.text(message="Dominio", default="idempiere.example.com").execute()
+                backend_port = int(inquirer.text(message="Puerto backend iDempiere", default="8080").execute())
+                create_site(domain=domain, backend_port=backend_port)
+            elif action == "Probar Nginx":
+                test_nginx()
+            elif action == "Recargar Nginx":
+                reload_nginx()
             elif action == "Ver ayuda":
-                console.print(help_text)
+                console.print(Panel(help_text, title="Ayuda", style="cyan"))
+                inquirer.text(message="Presiona ENTER para volver al menú", default="").execute()
             elif action == "Salir":
                 console.print("Saliendo de idempiere-cli.")
                 return
@@ -121,6 +137,6 @@ def run_main_menu(help_text: str) -> None:
         except Exception as exc:
             console.print(Panel(f"Error: {exc}", style="red"))
 
-        if action in {"Instalar iDempiere interactivo", "Instalar desde perfil YAML"}:
+        if action in {"Instalar iDempiere interactivo", "Instalar desde perfil YAML", "Instalar Nginx", "Crear site Nginx"}:
             if not inquirer.confirm(message="¿Volver al menú principal?", default=True).execute():
                 return

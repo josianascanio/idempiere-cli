@@ -77,6 +77,7 @@ def planned_actions(profile: dict, packages: list[str]) -> list[str]:
     actions.append(f"Asignar propietario idempiere:idempiere a {install_path}")
     if profile.get("install", {}).get("create_service", True):
         actions.append("Crear servicio systemd")
+        actions.append("Habilitar y arrancar servicio systemd")
     return actions
 
 
@@ -184,12 +185,15 @@ def _create_systemd_service(profile: dict, dry_run: bool) -> None:
         console.print(content)
         run_command(sudo_command(["systemctl", "daemon-reload"]), dry_run=True)
         run_command(sudo_command(["systemctl", "enable", name]), dry_run=True)
+        run_command(sudo_command(["systemctl", "start", name]), dry_run=True)
         return
     tmp_file = Path(tempfile.mkstemp(prefix=f"{name}-", suffix=".service")[1])
     tmp_file.write_text(content, encoding="utf-8")
     run_command(sudo_command(["cp", str(tmp_file), str(destination)]), stream=True)
     run_command(sudo_command(["systemctl", "daemon-reload"]), stream=True)
     run_command(sudo_command(["systemctl", "enable", name]), stream=True)
+    run_command(sudo_command(["systemctl", "start", name]), stream=True)
+    run_command(sudo_command(["systemctl", "status", name, "--no-pager"]), check=False, stream=True)
 
 
 def perform_install(profile: dict, packages: list[str], dry_run: bool, force: bool) -> None:
