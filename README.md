@@ -192,8 +192,8 @@ Valida:
 
 - Linux compatible.
 - Arquitectura compatible.
-- RAM mínima y recomendada.
-- Disco mínimo y recomendado.
+- RAM mínima y recomendada como advertencia, no bloqueante.
+- Disco mínimo y recomendado como advertencia, no bloqueante.
 - PostgreSQL.
 - Java requerido.
 - Puertos web, SSL y DB.
@@ -274,10 +274,10 @@ El instalador Python hace:
 
 ## Requisitos recomendados
 
-- RAM mínima pruebas: 4 GB.
+- RAM sugerida pruebas: 4 GB mínimo.
 - RAM recomendada pruebas: 6 GB.
 - RAM producción: 8 GB o más.
-- Disco mínimo: 20 GB.
+- Disco sugerido: 20 GB mínimo.
 - Disco recomendado: 50 GB o más.
 - iDempiere 10: Java 11.
 - iDempiere 12: Java 17.

@@ -41,7 +41,7 @@ def validate_ram(min_gb: float, recommended_gb: float) -> ValidationResult:
     if total <= 0:
         return ValidationResult("RAM", "WARNING", "No se pudo leer /proc/meminfo")
     if total < min_gb:
-        return ValidationResult("RAM", "ERROR", f"{total} GB disponibles, mínimo {min_gb} GB")
+        return ValidationResult("RAM", "WARNING", f"{total} GB disponibles, debajo del mínimo sugerido {min_gb} GB")
     if total < recommended_gb:
         return ValidationResult("RAM", "WARNING", f"{total} GB, recomendado {recommended_gb} GB")
     return ValidationResult("RAM", "OK", f"{total} GB")
@@ -51,9 +51,9 @@ def validate_disk(path: str, min_gb: float, recommended_gb: float) -> Validation
     try:
         free = get_disk_free_gb(path)
     except FileNotFoundError:
-        return ValidationResult("Disco", "ERROR", f"Ruta no existe: {path}")
+        return ValidationResult("Disco", "WARNING", f"Ruta no existe todavía: {path}")
     if free < min_gb:
-        return ValidationResult("Disco", "ERROR", f"{free} GB libres en {path}, mínimo {min_gb} GB")
+        return ValidationResult("Disco", "WARNING", f"{free} GB libres en {path}, debajo del mínimo sugerido {min_gb} GB")
     if free < recommended_gb:
         return ValidationResult("Disco", "WARNING", f"{free} GB libres en {path}, recomendado {recommended_gb} GB")
     return ValidationResult("Disco", "OK", f"{free} GB libres en {path}")
