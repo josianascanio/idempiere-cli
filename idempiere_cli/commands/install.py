@@ -3,11 +3,13 @@ from __future__ import annotations
 import shutil
 import tempfile
 import os
+import urllib.request
 from pathlib import Path
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
+from rich.progress import BarColumn, DownloadColumn, Progress, TaskProgressColumn, TextColumn, TimeRemainingColumn, TransferSpeedColumn
 from rich.prompt import Confirm
 from rich.table import Table
 
@@ -22,6 +24,30 @@ from idempiere_cli.core.templates import render_template, write_template
 from idempiere_cli.interactive import build_interactive_profile
 
 console = Console()
+
+
+def _download_with_progress(url: str, destination: Path) -> None:
+    request = urllib.request.Request(url, headers={"User-Agent": "idempiere-cli"})
+    with urllib.request.urlopen(request) as response:
+        total_header = response.headers.get("Content-Length")
+        total = int(total_header) if total_header and total_header.isdigit() else None
+        progress_columns = [
+            TextColumn("[cyan]Downloading iDempiere[/cyan]"),
+            BarColumn(),
+            TaskProgressColumn(),
+            DownloadColumn(),
+            TransferSpeedColumn(),
+            TimeRemainingColumn(),
+        ]
+        with Progress(*progress_columns, console=console) as progress:
+            task_id = progress.add_task("download", total=total)
+            with destination.open("wb") as handle:
+                while True:
+                    chunk = response.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    handle.write(chunk)
+                    progress.update(task_id, advance=len(chunk))
 
 
 def resolve_installer(profile: dict, explicit_installer: str | None = None, auto_detect: bool = False) -> str:
@@ -97,8 +123,7 @@ def _download_and_extract(profile: dict, dry_run: bool) -> Path:
         run_command(["wget", "-O", str(zip_path), profile["idempiere"]["download_url"]], dry_run=True)
         run_command(["unzip", "-o", str(zip_path), "-d", str(tmp_dir)], dry_run=True)
     else:
-        with console.status("Descargando iDempiere...", spinner="dots"):
-            run_command(["wget", "-q", "-O", str(zip_path), profile["idempiere"]["download_url"]])
+        _download_with_progress(profile["idempiere"]["download_url"], zip_path)
         console.print("[green]OK[/green] Descarga completada")
         with console.status("Extrayendo iDempiere...", spinner="dots"):
             run_command(["unzip", "-oq", str(zip_path), "-d", str(tmp_dir)])

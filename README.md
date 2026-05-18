@@ -249,6 +249,75 @@ Important fields:
 - `idempiere.download_url`: iDempiere server ZIP URL.
 - `dependencies.install_missing`: controls dependency installation in non-interactive profile mode.
 
+Sample `profile.yaml`:
+
+```yaml
+version: 12
+installer: "auto"
+code: "80"
+env: "idempiere"
+base_dir: "/opt/sas"
+
+java:
+  home: "/usr/lib/jvm/java-17-openjdk-amd64"
+  required_version: 17
+
+database:
+  engine: "postgresql"
+  version: 15
+  host: "localhost"
+  port: 5432
+  name: "80_idempiere"
+  user: "adempiere"
+  password: "adempiere"
+  admin_user: "postgres"
+
+resources:
+  min_ram_gb: 4
+  recommended_ram_gb: 8
+  min_disk_gb: 20
+  recommended_disk_gb: 50
+  disk_check_path: "/opt"
+
+ports:
+  web: 8080
+  ssl: 8480
+
+service:
+  name: "80_idempiere"
+  user: "idempiere"
+  type: "systemd"
+
+nginx:
+  enabled: false
+  domain: "idempiere.example.com"
+  ssl_enabled: false
+
+idempiere:
+  download_url: "https://sourceforge.net/projects/idempiere/files/v12/daily-server/idempiereServer12Daily.gtk.linux.x86_64.zip/download"
+  install_path: "/opt/sas/80_idempiere"
+
+install:
+  create_database: true
+  restore_database: false
+  create_service: true
+  configure_nginx: false
+
+dependencies:
+  install_missing: false
+  base: true
+  java: true
+  postgres: true
+  nginx: false
+  packages:
+    - curl
+    - wget
+    - unzip
+    - tar
+    - fontconfig
+    - git
+```
+
 Profile dry-run example:
 
 ```bash
