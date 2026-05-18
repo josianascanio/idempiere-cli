@@ -212,6 +212,13 @@ def execute_install(
 
     blocking_errors = [result for result in checks if result.status == "ERROR" and not is_resolved_by_dependency_install(result.name)]
     if blocking_errors:
+        table = Table(title="Errores que bloquean la instalación")
+        table.add_column("Validación", style="red")
+        table.add_column("Detalle")
+        for result in blocking_errors:
+            table.add_row(result.name, result.message)
+        console.print(table)
+        console.print(Panel("Selecciona instalar dependencias faltantes o corrige estos puntos antes de continuar. RAM y disco bajo solo son advertencias y no bloquean.", style="yellow"))
         raise typer.Exit(code=1)
 
     print_install_summary(data, selected_installer, dry_run, packages)

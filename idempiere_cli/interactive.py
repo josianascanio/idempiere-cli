@@ -62,11 +62,11 @@ def build_interactive_profile() -> tuple[dict, list[str]]:
     missing = missing_packages(deps)
     selected: list[str] = []
     if missing:
-        selected = inquirer.checkbox(
-            message="Dependencias faltantes a instalar",
-            choices=missing,
-            default=missing,
-        ).execute()
+        console.print(Panel("Se detectaron dependencias faltantes requeridas para instalar iDempiere. Si no se instalan, la instalación se detendrá antes de aplicar cambios.", title="Dependencias", style="yellow"))
+        for package in missing:
+            console.print(f"  - {package}")
+        install_missing = inquirer.confirm(message="¿Instalar dependencias faltantes ahora?", default=True).execute()
+        selected = missing if install_missing else []
     profile["dependencies"]["install_missing"] = bool(selected)
     return profile, selected
 
