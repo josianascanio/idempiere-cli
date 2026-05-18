@@ -71,8 +71,10 @@ def planned_actions(profile: dict, packages: list[str]) -> list[str]:
         ]
     )
     if profile.get("install", {}).get("create_database", True):
-        actions.append("Ejecutar utils/RUN_ImportIdempiere.sh")
+        actions.append("Ejecutar RUN_ImportIdempiere.sh desde utils")
     actions.extend(["Ejecutar utils/RUN_SyncDB.sh", "Ejecutar sign-database-build-alt.sh"])
+    actions.append("Crear usuario Linux idempiere si no existe")
+    actions.append(f"Asignar propietario idempiere:idempiere a {install_path}")
     if profile.get("install", {}).get("create_service", True):
         actions.append("Crear servicio systemd")
     return actions
@@ -140,16 +142,34 @@ def _refresh_java_home(profile: dict, dry_run: bool) -> None:
 
 def _run_idempiere_setup(profile: dict, dry_run: bool) -> None:
     home = Path(profile["idempiere"]["install_path"])
+    utils = home / "utils"
     run_command(["sh", "silent-setup-alt.sh"], cwd=home, dry_run=dry_run, stream=not dry_run)
-    env_file = home / "myEnvironment.sh"
+    env_candidates = [home / "myEnvironment.sh", utils / "myEnvironment.sh"]
     if dry_run:
-        console.print(f"[yellow]DRY-RUN:[/yellow] validar {env_file}")
-    elif not env_file.exists():
-        raise RuntimeError(f"silent-setup-alt.sh no generó {env_file}. Revisa JAVA_HOME y el log anterior.")
+        console.print(f"[yellow]DRY-RUN:[/yellow] validar myEnvironment.sh en {home} o {utils}")
+    elif not any(path.exists() for path in env_candidates):
+        expected = " o ".join(str(path) for path in env_candidates)
+        raise RuntimeError(f"silent-setup-alt.sh no generó myEnvironment.sh en {expected}. Revisa JAVA_HOME y el log anterior.")
+    else:
+        found = next(path for path in env_candidates if path.exists())
+        console.print(f"[green]Entorno generado:[/green] {found}")
     if profile.get("install", {}).get("create_database", True):
-        run_command(["bash", "utils/RUN_ImportIdempiere.sh"], cwd=home, dry_run=dry_run, stream=not dry_run)
-    run_command(["sh", "RUN_SyncDB.sh"], cwd=home / "utils", dry_run=dry_run, stream=not dry_run)
+        run_command(["bash", "RUN_ImportIdempiere.sh"], cwd=utils, dry_run=dry_run, stream=not dry_run)
+    run_command(["sh", "RUN_SyncDB.sh"], cwd=utils, dry_run=dry_run, stream=not dry_run)
     run_command(["sh", "sign-database-build-alt.sh"], cwd=home, dry_run=dry_run, stream=not dry_run)
+
+
+def _create_linux_user_and_permissions(profile: dict, dry_run: bool) -> None:
+    home = Path(profile["idempiere"]["install_path"])
+    user = profile.get("service", {}).get("user", "idempiere")
+    run_command(["id", user], dry_run=dry_run, check=False, stream=not dry_run)
+    if dry_run:
+        run_command(sudo_command(["useradd", "-d", str(home), "-s", "/bin/bash", user]), dry_run=True)
+        run_command(sudo_command(["chown", "-R", f"{user}:{user}", str(home)]), dry_run=True)
+        return
+    if run_command(["id", user], check=False).returncode != 0:
+        run_command(sudo_command(["useradd", "-d", str(home), "-s", "/bin/bash", user]), stream=True)
+    run_command(sudo_command(["chown", "-R", f"{user}:{user}", str(home)]), stream=True)
 
 
 def _create_systemd_service(profile: dict, dry_run: bool) -> None:
@@ -187,6 +207,7 @@ def perform_install(profile: dict, packages: list[str], dry_run: bool, force: bo
         _download_and_extract(profile, dry_run=True)
         _write_env(profile, dry_run=True)
         _run_idempiere_setup(profile, dry_run=True)
+        _create_linux_user_and_permissions(profile, dry_run=True)
         _create_systemd_service(profile, dry_run=True)
         return
     console.print(Panel("Preparando directorio de instalación", style="cyan"))
@@ -198,6 +219,8 @@ def perform_install(profile: dict, packages: list[str], dry_run: bool, force: bo
     console.print(Panel("Generando configuración y ejecutando scripts iDempiere", style="cyan"))
     _write_env(profile, dry_run=False)
     _run_idempiere_setup(profile, dry_run=False)
+    console.print(Panel("Creando usuario Linux y ajustando permisos", style="cyan"))
+    _create_linux_user_and_permissions(profile, dry_run=False)
     console.print(Panel("Creando servicio systemd", style="cyan"))
     _create_systemd_service(profile, dry_run=False)
 

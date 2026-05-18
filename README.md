@@ -271,10 +271,12 @@ El instalador Python hace:
 9. Copia `idempiere-server` al destino.
 10. Genera `idempiereEnv.properties`.
 11. Ejecuta `silent-setup-alt.sh`.
-12. Ejecuta `utils/RUN_ImportIdempiere.sh` si `install.create_database: true`.
+12. Ejecuta `RUN_ImportIdempiere.sh` desde `utils` si `install.create_database: true`.
 13. Ejecuta `utils/RUN_SyncDB.sh`.
 14. Ejecuta `sign-database-build-alt.sh`.
-15. Crea y habilita servicio systemd si `install.create_service: true`.
+15. Crea el usuario Linux `idempiere` si no existe.
+16. Aplica propietario `idempiere:idempiere` a la carpeta instalada.
+17. Crea y habilita servicio systemd si `install.create_service: true`.
 
 ## Requisitos recomendados
 
