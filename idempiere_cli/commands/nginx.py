@@ -17,9 +17,22 @@ def install_nginx(dry_run: bool = False) -> None:
     install_apt_packages(["nginx"], dry_run=dry_run)
 
 
-def create_site(domain: str, backend_port: int = 8080, dry_run: bool = False, force: bool = False) -> None:
+def create_site(
+    domain: str,
+    backend_port: int = 8080,
+    dry_run: bool = False,
+    force: bool = False,
+    ssl_enabled: bool = False,
+    ssl_certificate: str = "",
+    ssl_certificate_key: str = "",
+) -> None:
     profile = {
-        "nginx": {"domain": domain},
+        "nginx": {
+            "domain": domain,
+            "ssl_enabled": ssl_enabled,
+            "ssl_certificate": ssl_certificate,
+            "ssl_certificate_key": ssl_certificate_key,
+        },
         "ports": {"web": backend_port},
     }
     content = render_template("nginx.conf.j2", {"profile": profile})

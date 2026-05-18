@@ -76,11 +76,44 @@ def _ask_profile_path() -> Path:
     return Path(inquirer.text(message="Ruta del perfil YAML", default="profiles/idempiere12-test.example.yml").execute()).expanduser()
 
 
+def _run_nginx_menu() -> None:
+    from idempiere_cli.commands.nginx import create_site, install_nginx, reload_nginx, test_nginx
+
+    while True:
+        action = inquirer.select(
+            message="Nginx",
+            choices=[
+                "Instalar Nginx",
+                "Crear site Nginx",
+                "Probar configuración",
+                "Recargar Nginx",
+                "Volver",
+            ],
+        ).execute()
+        if action == "Instalar Nginx":
+            install_nginx()
+        elif action == "Crear site Nginx":
+            domain = inquirer.text(message="Dominio", default="idempiere.example.com").execute()
+            backend_port = int(inquirer.text(message="Puerto backend iDempiere", default="8080").execute())
+            ssl_enabled = inquirer.confirm(message="¿Configurar SSL en el site?", default=False).execute()
+            cert = ""
+            key = ""
+            if ssl_enabled:
+                cert = inquirer.text(message="Ruta ssl_certificate", default=f"/etc/letsencrypt/live/{domain}/fullchain.pem").execute()
+                key = inquirer.text(message="Ruta ssl_certificate_key", default=f"/etc/letsencrypt/live/{domain}/privkey.pem").execute()
+            create_site(domain=domain, backend_port=backend_port, ssl_enabled=ssl_enabled, ssl_certificate=cert, ssl_certificate_key=key)
+        elif action == "Probar configuración":
+            test_nginx()
+        elif action == "Recargar Nginx":
+            reload_nginx()
+        elif action == "Volver":
+            return
+
+
 def run_main_menu(help_text: str) -> None:
     from idempiere_cli.commands.check import check_command
     from idempiere_cli.commands.detect import detect_command
     from idempiere_cli.commands.install import execute_install
-    from idempiere_cli.commands.nginx import create_site, install_nginx, reload_nginx, test_nginx
 
     while True:
         console.print(Panel("Selecciona una acción. Las opciones de detección y validación regresan al menú automáticamente.", title="Menú principal", style="cyan"))
@@ -93,10 +126,7 @@ def run_main_menu(help_text: str) -> None:
                 "Simular instalación interactiva (--dry-run)",
                 "Instalar desde perfil YAML",
                 "Simular desde perfil YAML (--dry-run)",
-                "Instalar Nginx",
-                "Crear site Nginx",
-                "Probar Nginx",
-                "Recargar Nginx",
+                "Nginx",
                 "Ver ayuda",
                 "Salir",
             ],
@@ -115,16 +145,8 @@ def run_main_menu(help_text: str) -> None:
                 execute_install(profile=_ask_profile_path(), dry_run=False)
             elif action == "Simular desde perfil YAML (--dry-run)":
                 execute_install(profile=_ask_profile_path(), dry_run=True)
-            elif action == "Instalar Nginx":
-                install_nginx()
-            elif action == "Crear site Nginx":
-                domain = inquirer.text(message="Dominio", default="idempiere.example.com").execute()
-                backend_port = int(inquirer.text(message="Puerto backend iDempiere", default="8080").execute())
-                create_site(domain=domain, backend_port=backend_port)
-            elif action == "Probar Nginx":
-                test_nginx()
-            elif action == "Recargar Nginx":
-                reload_nginx()
+            elif action == "Nginx":
+                _run_nginx_menu()
             elif action == "Ver ayuda":
                 console.print(Panel(help_text, title="Ayuda", style="cyan"))
                 inquirer.text(message="Presiona ENTER para volver al menú", default="").execute()
@@ -137,6 +159,6 @@ def run_main_menu(help_text: str) -> None:
         except Exception as exc:
             console.print(Panel(f"Error: {exc}", style="red"))
 
-        if action in {"Instalar iDempiere interactivo", "Instalar desde perfil YAML", "Instalar Nginx", "Crear site Nginx"}:
+        if action in {"Instalar iDempiere interactivo", "Instalar desde perfil YAML"}:
             if not inquirer.confirm(message="¿Volver al menú principal?", default=True).execute():
                 return

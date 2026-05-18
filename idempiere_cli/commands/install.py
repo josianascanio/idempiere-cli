@@ -93,8 +93,16 @@ def print_plan(profile: dict, packages: list[str]) -> None:
 def _download_and_extract(profile: dict, dry_run: bool) -> Path:
     tmp_dir = Path(tempfile.mkdtemp(prefix="idempiere-cli-"))
     zip_path = tmp_dir / "idempiere.zip"
-    run_command(["wget", "--progress=bar:force:noscroll", "-O", str(zip_path), profile["idempiere"]["download_url"]], dry_run=dry_run, stream=not dry_run)
-    run_command(["unzip", "-o", str(zip_path), "-d", str(tmp_dir)], dry_run=dry_run, stream=not dry_run)
+    if dry_run:
+        run_command(["wget", "-O", str(zip_path), profile["idempiere"]["download_url"]], dry_run=True)
+        run_command(["unzip", "-o", str(zip_path), "-d", str(tmp_dir)], dry_run=True)
+    else:
+        with console.status("Descargando iDempiere...", spinner="dots"):
+            run_command(["wget", "-q", "-O", str(zip_path), profile["idempiere"]["download_url"]])
+        console.print("[green]OK[/green] Descarga completada")
+        with console.status("Extrayendo iDempiere...", spinner="dots"):
+            run_command(["unzip", "-oq", str(zip_path), "-d", str(tmp_dir)])
+        console.print("[green]OK[/green] Extracción completada")
     return tmp_dir
 
 
@@ -155,7 +163,7 @@ def _run_idempiere_setup(profile: dict, dry_run: bool) -> None:
         found = next(path for path in env_candidates if path.exists())
         console.print(f"[green]Entorno generado:[/green] {found}")
     if profile.get("install", {}).get("create_database", True):
-        run_command(["bash", "RUN_ImportIdempiere.sh"], cwd=utils, dry_run=dry_run, stream=not dry_run)
+        run_command("printf '\n' | bash RUN_ImportIdempiere.sh", cwd=utils, dry_run=dry_run, stream=not dry_run)
     run_command(["sh", "RUN_SyncDB.sh"], cwd=utils, dry_run=dry_run, stream=not dry_run)
     run_command(["sh", "sign-database-build-alt.sh"], cwd=home, dry_run=dry_run, stream=not dry_run)
 

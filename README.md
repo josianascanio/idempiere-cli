@@ -26,55 +26,15 @@ MVP funcional con:
 - Linux para instalación real de iDempiere
 - `pipx` recomendado
 
-## Instalación desde Git
-
-```bash
-pipx install git+https://github.com/josianascanio/idempiere-cli.git
-```
-
-## Instalación de un solo comando en servidor limpio
-
-Para instalar solo el CLI y sus dependencias mínimas (`python3`, `pip`, `venv`, `pipx`, `git`, `curl`, certificados):
+## Instalación
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash
 ```
 
-Para instalar el CLI y abrir el instalador interactivo en la misma línea:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash -s -- install --interactive
-```
-
-Para probar sin tocar el servidor:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash -s -- install --interactive --dry-run
-```
-
-Para instalar iDempiere permitiendo que el CLI instale dependencias faltantes del servidor durante `install`:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash -s -- install --interactive --install-dependencies
-```
-
 El `bootstrap.sh` instala las dependencias necesarias para ejecutar el CLI. Las dependencias propias de iDempiere, como Java, PostgreSQL, Nginx o `unzip`, se seleccionan y validan dentro de `idempiere-cli install`.
 
 Si `pipx` muestra un aviso indicando que `/root/.local/bin` no está en el `PATH`, normalmente puedes ignorarlo cuando usas `sudo bash`: el bootstrap crea un enlace global en `/usr/local/bin/idempiere-cli` y lo verifica al final.
-
-## Instalación local editable
-
-```bash
-git clone https://github.com/josianascanio/idempiere-cli.git
-cd idempiere-cli
-pipx install . --force
-```
-
-También puedes usar:
-
-```bash
-./install.sh
-```
 
 ## Uso básico
 
@@ -283,12 +243,16 @@ El instalador Python hace:
 
 Desde el menú interactivo puedes usar:
 
-- `Instalar Nginx`.
-- `Crear site Nginx`.
-- `Probar Nginx`.
-- `Recargar Nginx`.
+- `Nginx`.
 
-El site Nginx genera un reverse proxy básico hacia el puerto web de iDempiere, por defecto `8080`.
+Dentro del submenú puedes:
+
+- Instalar Nginx.
+- Crear site Nginx.
+- Probar configuración.
+- Recargar Nginx.
+
+El site Nginx genera un reverse proxy para iDempiere hacia el puerto web, por defecto `8080`. Puede generarse en HTTP o con bloque HTTPS si proporcionas rutas de certificado y llave SSL.
 
 ## Requisitos recomendados
 
@@ -307,7 +271,7 @@ El site Nginx genera un reverse proxy básico hacia el puerto web de iDempiere, 
 - Usa `--dry-run` antes de instalar.
 - La instalación real pide confirmación.
 - La instalación real requiere root.
-- No se instalan dependencias durante `pipx install`.
+- No se instalan dependencias de iDempiere durante la instalación del CLI.
 - Si la base de datos destino ya existe, se bloquea salvo `--force`.
 - Si la ruta destino no está vacía, se bloquea salvo `--force`.
 
