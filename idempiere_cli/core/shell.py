@@ -35,6 +35,7 @@ def run_command(
     check: bool = True,
     cwd: str | Path | None = None,
     env: dict[str, str] | None = None,
+    stream: bool = False,
 ) -> CommandResult:
     command_display = command if isinstance(command, str) else " ".join(shlex.quote(part) for part in command)
     if dry_run:
@@ -44,6 +45,33 @@ def run_command(
 
     start = time.monotonic()
     logger.info("RUN %s", command_display)
+    if stream:
+        console.print(f"[cyan]$[/cyan] {command_display}")
+        process = subprocess.Popen(
+            command,
+            cwd=str(cwd) if cwd else None,
+            env={**os.environ, **env} if env else None,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=isinstance(command, str),
+            bufsize=1,
+        )
+        output_lines: list[str] = []
+        assert process.stdout is not None
+        for line in process.stdout:
+            output_lines.append(line)
+            console.print(line.rstrip())
+        returncode = process.wait()
+        duration = time.monotonic() - start
+        stdout = "".join(output_lines)
+        logger.info("EXIT %s code=%s duration=%.2fs", command_display, returncode, duration)
+        if stdout:
+            logger.info("OUTPUT %s", stdout.strip())
+        if check and returncode != 0:
+            raise RuntimeError(f"Comando falló ({returncode}): {command_display}\n{stdout}")
+        return CommandResult(str(command_display), stdout, "", returncode, duration)
+
     process = subprocess.run(
         command,
         cwd=str(cwd) if cwd else None,

@@ -13,9 +13,10 @@ from rich.table import Table
 
 from idempiere_cli.commands.check import collect_checks, print_checks
 from idempiere_cli.core.config import derive_profile_values, load_profile
-from idempiere_cli.core.dependencies import detect_dependencies, install_apt_packages, missing_packages, selected_postgres_version
+from idempiere_cli.core.dependencies import detect_dependencies, format_package_list, install_apt_packages, missing_packages, selected_postgres_version
 from idempiere_cli.core.detection import detect_installer
-from idempiere_cli.core.postgres import database_exists
+from idempiere_cli.core.java import find_java_home
+from idempiere_cli.core.postgres import configure_local_postgres, database_exists
 from idempiere_cli.core.shell import run_command, sudo_command
 from idempiere_cli.core.templates import render_template, write_template
 from idempiere_cli.interactive import build_interactive_profile
@@ -48,7 +49,7 @@ def print_install_summary(profile: dict, installer: str, dry_run: bool, packages
     table.add_row("Base de datos", f"{profile['database']['name']} en {profile['database']['host']}:{profile['database']['port']}")
     table.add_row("Puertos", f"web={profile['ports']['web']} ssl={profile['ports']['ssl']}")
     table.add_row("Servicio", profile.get("service", {}).get("name", f"{profile['code']}_{profile['env']}"))
-    table.add_row("Dependencias faltantes a instalar", ", ".join(packages) if packages else "ninguna")
+    table.add_row("Dependencias faltantes a instalar", format_package_list(packages) if packages else "ninguna")
     console.print(table)
 
 
@@ -58,7 +59,7 @@ def planned_actions(profile: dict, packages: list[str]) -> list[str]:
     if packages:
         if selected_postgres_version(packages):
             actions.append("Configurar repo oficial PostgreSQL PGDG si el paquete no está disponible")
-        actions.append(f"Instalar dependencias con apt: {', '.join(packages)}")
+        actions.append(f"Instalar dependencias con apt: {format_package_list(packages)}")
     actions.extend(
         [
             f"Crear directorio {install_path}",
@@ -89,8 +90,8 @@ def print_plan(profile: dict, packages: list[str]) -> None:
 def _download_and_extract(profile: dict, dry_run: bool) -> Path:
     tmp_dir = Path(tempfile.mkdtemp(prefix="idempiere-cli-"))
     zip_path = tmp_dir / "idempiere.zip"
-    run_command(["wget", "--progress=bar:force:noscroll", "-O", str(zip_path), profile["idempiere"]["download_url"]], dry_run=dry_run)
-    run_command(["unzip", "-o", str(zip_path), "-d", str(tmp_dir)], dry_run=dry_run)
+    run_command(["wget", "--progress=bar:force:noscroll", "-O", str(zip_path), profile["idempiere"]["download_url"]], dry_run=dry_run, stream=not dry_run)
+    run_command(["unzip", "-o", str(zip_path), "-d", str(tmp_dir)], dry_run=dry_run, stream=not dry_run)
     return tmp_dir
 
 
@@ -127,13 +128,28 @@ def _write_env(profile: dict, dry_run: bool) -> None:
     write_template("idempiereEnv.properties.j2", destination, {"profile": profile})
 
 
+def _refresh_java_home(profile: dict, dry_run: bool) -> None:
+    required = int(profile.get("java", {}).get("required_version", 17))
+    java_home = find_java_home(required)
+    if java_home:
+        profile.setdefault("java", {})["home"] = java_home
+        console.print(f"[green]JAVA_HOME detectado:[/green] {java_home}")
+    elif not dry_run:
+        raise RuntimeError(f"No se pudo detectar JAVA_HOME para Java {required}. Verifica instalación de Java.")
+
+
 def _run_idempiere_setup(profile: dict, dry_run: bool) -> None:
     home = Path(profile["idempiere"]["install_path"])
-    run_command(["sh", "silent-setup-alt.sh"], cwd=home, dry_run=dry_run)
+    run_command(["sh", "silent-setup-alt.sh"], cwd=home, dry_run=dry_run, stream=not dry_run)
+    env_file = home / "myEnvironment.sh"
+    if dry_run:
+        console.print(f"[yellow]DRY-RUN:[/yellow] validar {env_file}")
+    elif not env_file.exists():
+        raise RuntimeError(f"silent-setup-alt.sh no generó {env_file}. Revisa JAVA_HOME y el log anterior.")
     if profile.get("install", {}).get("create_database", True):
-        run_command(["bash", "utils/RUN_ImportIdempiere.sh"], cwd=home, dry_run=dry_run)
-    run_command(["sh", "RUN_SyncDB.sh"], cwd=home / "utils", dry_run=dry_run)
-    run_command(["sh", "sign-database-build-alt.sh"], cwd=home, dry_run=dry_run)
+        run_command(["bash", "utils/RUN_ImportIdempiere.sh"], cwd=home, dry_run=dry_run, stream=not dry_run)
+    run_command(["sh", "RUN_SyncDB.sh"], cwd=home / "utils", dry_run=dry_run, stream=not dry_run)
+    run_command(["sh", "sign-database-build-alt.sh"], cwd=home, dry_run=dry_run, stream=not dry_run)
 
 
 def _create_systemd_service(profile: dict, dry_run: bool) -> None:
@@ -151,29 +167,38 @@ def _create_systemd_service(profile: dict, dry_run: bool) -> None:
         return
     tmp_file = Path(tempfile.mkstemp(prefix=f"{name}-", suffix=".service")[1])
     tmp_file.write_text(content, encoding="utf-8")
-    run_command(sudo_command(["cp", str(tmp_file), str(destination)]))
-    run_command(sudo_command(["systemctl", "daemon-reload"]))
-    run_command(sudo_command(["systemctl", "enable", name]))
+    run_command(sudo_command(["cp", str(tmp_file), str(destination)]), stream=True)
+    run_command(sudo_command(["systemctl", "daemon-reload"]), stream=True)
+    run_command(sudo_command(["systemctl", "enable", name]), stream=True)
 
 
 def perform_install(profile: dict, packages: list[str], dry_run: bool, force: bool) -> None:
     install_path = Path(profile["idempiere"]["install_path"])
     if database_exists(profile["database"]["name"], profile["database"].get("admin_user", "postgres"), dry_run=dry_run) and not force:
         raise RuntimeError(f"La base {profile['database']['name']} ya existe. Usa --force si estás seguro.")
+    console.print(Panel("Instalando dependencias del sistema", style="cyan"))
     install_apt_packages(packages, dry_run=dry_run)
+    console.print(Panel("Detectando Java y configurando PostgreSQL local", style="cyan"))
+    _refresh_java_home(profile, dry_run=dry_run)
+    configure_local_postgres(int(profile["database"].get("version", 15)), dry_run=dry_run)
     if dry_run:
+        console.print(Panel("Simulando instalación de iDempiere", style="yellow"))
         run_command(sudo_command(["mkdir", "-p", str(install_path)]), dry_run=True)
         _download_and_extract(profile, dry_run=True)
         _write_env(profile, dry_run=True)
         _run_idempiere_setup(profile, dry_run=True)
         _create_systemd_service(profile, dry_run=True)
         return
-    run_command(sudo_command(["mkdir", "-p", str(install_path)]))
+    console.print(Panel("Preparando directorio de instalación", style="cyan"))
+    run_command(sudo_command(["mkdir", "-p", str(install_path)]), stream=True)
+    console.print(Panel("Descargando y extrayendo iDempiere", style="cyan"))
     tmp_dir = _download_and_extract(profile, dry_run=False)
     server_dir = _find_extracted_server(tmp_dir)
     _copy_installation(server_dir, install_path, dry_run=False, force=force)
+    console.print(Panel("Generando configuración y ejecutando scripts iDempiere", style="cyan"))
     _write_env(profile, dry_run=False)
     _run_idempiere_setup(profile, dry_run=False)
+    console.print(Panel("Creando servicio systemd", style="cyan"))
     _create_systemd_service(profile, dry_run=False)
 
 

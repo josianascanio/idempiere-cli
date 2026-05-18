@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -51,6 +52,15 @@ def validate_java_for_idempiere(version: int) -> ValidationResult:
 
 
 def find_java_home(required_version: int) -> str | None:
+    java_bin = shutil.which("java")
+    if java_bin:
+        resolved = subprocess.run(["readlink", "-f", java_bin], text=True, capture_output=True)
+        java_path = Path((resolved.stdout or java_bin).strip())
+        if len(java_path.parents) >= 2:
+            home = str(java_path.parents[1])
+            if str(required_version) in home or required_version == _major(get_java_version()):
+                return home
+
     for path in get_installed_javas():
         if str(required_version) in path:
             return path

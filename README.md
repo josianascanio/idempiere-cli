@@ -131,9 +131,11 @@ En modo interactivo:
 idempiere-cli install --interactive
 ```
 
-El CLI detecta faltantes y pregunta cuáles instalar.
+El CLI detecta faltantes y pregunta cuáles instalar. En el selector aparecen con nombres descriptivos, por ejemplo `Java 17 JDK`, `PostgreSQL 15 server` y `PostgreSQL client tools (psql, pg_dump, pg_restore)`.
 
 Si seleccionas `postgresql-15` y el paquete no existe en los repositorios base del sistema, el CLI configura automáticamente el repositorio oficial PostgreSQL PGDG antes de instalarlo.
+
+Durante la instalación real, los comandos largos muestran salida en vivo para que puedas ver el progreso de `apt`, descarga, extracción y scripts internos de iDempiere.
 
 En modo perfil:
 

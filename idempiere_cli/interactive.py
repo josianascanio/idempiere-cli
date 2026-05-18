@@ -9,7 +9,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from idempiere_cli.core.config import default_profile
-from idempiere_cli.core.dependencies import detect_dependencies, missing_packages
+from idempiere_cli.core.dependencies import detect_dependencies, missing_packages, package_label
 from idempiere_cli.core.detection import detect_installer
 
 console = Console()
@@ -65,7 +65,7 @@ def build_interactive_profile() -> tuple[dict, list[str]]:
         console.print(Panel("Selecciona las dependencias faltantes que quieres instalar. Todas las requeridas vienen marcadas por defecto.", title="Dependencias", style="yellow"))
         selected = inquirer.checkbox(
             message="Dependencias faltantes a instalar",
-            choices=missing,
+            choices=[{"name": package_label(package), "value": package, "enabled": True} for package in missing],
             default=missing,
         ).execute()
     profile["dependencies"]["install_missing"] = bool(selected)

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 import subprocess
+import tempfile
+from pathlib import Path
 
 from idempiere_cli.core.resources import ValidationResult
 from idempiere_cli.core.shell import command_exists, run_command, sudo_command
@@ -67,3 +69,32 @@ def database_exists(name: str, admin_user: str = "postgres", dry_run: bool = Fal
 def create_database(name: str, owner: str, admin_user: str = "postgres", dry_run: bool = False) -> None:
     command = sudo_command(["createdb", "-U", admin_user, "-O", owner, name])
     run_command(command, dry_run=dry_run)
+
+
+def configure_local_postgres(version: int, dry_run: bool = False) -> None:
+    config_dir = Path(f"/etc/postgresql/{version}/main")
+    pg_hba = config_dir / "pg_hba.conf"
+    if dry_run:
+        run_command(sudo_command(["test", "-d", str(config_dir)]), dry_run=True)
+    elif not config_dir.exists():
+        return
+
+    content = """local   all             postgres                                peer
+local   all             all                                     md5
+host    all             all             127.0.0.1/32            md5
+host    all             all             ::1/128                 md5
+"""
+    if dry_run:
+        run_command(["sh", "-c", f"printf %s {content!r} > {pg_hba}"], dry_run=True)
+    else:
+        tmp_path = Path(tempfile.mkstemp(prefix="pg_hba-", suffix=".conf")[1])
+        tmp_path.write_text(content, encoding="utf-8")
+        run_command(sudo_command(["cp", str(tmp_path), str(pg_hba)]), stream=True)
+
+    if command_exists("sudo"):
+        password_command = ["sudo", "-u", "postgres", "psql", "-U", "postgres", "-c", "alter user postgres password 'postgres';"]
+    else:
+        password_command = ["runuser", "-u", "postgres", "--", "psql", "-U", "postgres", "-c", "alter user postgres password 'postgres';"]
+    run_command(password_command, dry_run=dry_run, check=False, stream=not dry_run)
+    run_command(sudo_command(["systemctl", "enable", "postgresql"]), dry_run=dry_run, check=False, stream=not dry_run)
+    run_command(sudo_command(["systemctl", "restart", "postgresql"]), dry_run=dry_run, check=False, stream=not dry_run)

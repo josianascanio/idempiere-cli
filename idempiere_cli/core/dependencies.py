@@ -9,6 +9,13 @@ from idempiere_cli.core.shell import command_exists, run_command, sudo_command
 
 
 BASE_PACKAGES = ["curl", "wget", "unzip", "tar", "fontconfig", "git"]
+PACKAGE_LABELS = {
+    "openjdk-17-jdk-headless": "Java 17 JDK",
+    "postgresql-15": "PostgreSQL 15 server",
+    "postgresql-client": "PostgreSQL client tools (psql, pg_dump, pg_restore)",
+    "fontconfig": "fontconfig (fuentes para reportes/PDF)",
+    "unzip": "unzip (extraer build iDempiere)",
+}
 
 
 @dataclass
@@ -45,6 +52,14 @@ def missing_packages(deps: list[Dependency]) -> list[str]:
     return packages
 
 
+def package_label(package: str) -> str:
+    return PACKAGE_LABELS.get(package, package)
+
+
+def format_package_list(packages: list[str]) -> str:
+    return ", ".join(package_label(package) for package in packages)
+
+
 def apt_package_available(package: str) -> bool:
     if not command_exists("apt-cache"):
         return False
@@ -75,12 +90,13 @@ def configure_postgresql_apt_repo(version: int, dry_run: bool = False) -> None:
     if not codename and not dry_run:
         raise RuntimeError("No se pudo detectar el codename de la distribución para configurar el repo PostgreSQL.")
 
-    run_command(sudo_command(["apt", "update", "-y"]), dry_run=dry_run)
-    run_command(sudo_command(["apt", "install", "-y", "wget", "ca-certificates", "lsb-release", "gnupg"]), dry_run=dry_run)
-    run_command(sudo_command(["install", "-d", "/usr/share/keyrings"]), dry_run=dry_run)
+    run_command(sudo_command(["apt", "update", "-y"]), dry_run=dry_run, stream=not dry_run)
+    run_command(sudo_command(["apt", "install", "-y", "wget", "ca-certificates", "lsb-release", "gnupg"]), dry_run=dry_run, stream=not dry_run)
+    run_command(sudo_command(["install", "-d", "/usr/share/keyrings"]), dry_run=dry_run, stream=not dry_run)
     run_command(
         sudo_command(["wget", "-q", "-O", "/usr/share/keyrings/postgresql-keyring.asc", "https://www.postgresql.org/media/keys/ACCC4CF8.asc"]),
         dry_run=dry_run,
+        stream=not dry_run,
     )
 
     source_line = f"deb [signed-by=/usr/share/keyrings/postgresql-keyring.asc] https://apt.postgresql.org/pub/repos/apt {codename}-pgdg main\n"
@@ -90,8 +106,8 @@ def configure_postgresql_apt_repo(version: int, dry_run: bool = False) -> None:
     else:
         tmp_path = Path(tempfile.mkstemp(prefix="postgresql-", suffix=".list")[1])
         tmp_path.write_text(source_line, encoding="utf-8")
-        run_command(sudo_command(["cp", str(tmp_path), source_path]))
-    run_command(sudo_command(["apt", "update", "-y"]), dry_run=dry_run)
+        run_command(sudo_command(["cp", str(tmp_path), source_path]), stream=True)
+    run_command(sudo_command(["apt", "update", "-y"]), dry_run=dry_run, stream=not dry_run)
 
 
 def install_apt_packages(packages: list[str], dry_run: bool = False) -> None:
@@ -103,5 +119,5 @@ def install_apt_packages(packages: list[str], dry_run: bool = False) -> None:
     postgres_version = selected_postgres_version(packages)
     if postgres_version:
         configure_postgresql_apt_repo(postgres_version, dry_run=dry_run)
-    run_command(sudo_command(["apt", "update", "-y"]), dry_run=dry_run)
-    run_command(sudo_command(["apt", "install", "-y", *packages]), dry_run=dry_run)
+    run_command(sudo_command(["apt", "update", "-y"]), dry_run=dry_run, stream=not dry_run)
+    run_command(sudo_command(["apt", "install", "-y", *packages]), dry_run=dry_run, stream=not dry_run)
