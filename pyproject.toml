@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "idempiere-cli"
+version = "0.1.0"
+description = "Developer CLI for installing and managing iDempiere environments"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Josian Ascanio" }
+]
+dependencies = [
+  "typer>=0.12.0",
+  "rich>=13.7.0",
+  "InquirerPy>=0.3.4",
+  "PyYAML>=6.0.1",
+  "Jinja2>=3.1.0"
+]
+
+[project.scripts]
+idempiere-cli = "idempiere_cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["idempiere_cli"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"idempiere_cli/templates" = "idempiere_cli/templates"

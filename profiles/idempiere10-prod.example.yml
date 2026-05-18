@@ -1,0 +1,65 @@
+version: 10
+installer: "auto"
+code: "80"
+env: "idaan_prod"
+base_dir: "/opt/sas"
+
+java:
+  home: "/usr/lib/jvm/java-11-openjdk-amd64"
+  required_version: 11
+
+database:
+  engine: "postgresql"
+  version: 13
+  host: "localhost"
+  port: 5432
+  name: "80_idaan_prod"
+  user: "adempiere"
+  password: "adempiere"
+  admin_user: "postgres"
+
+resources:
+  min_ram_gb: 4
+  recommended_ram_gb: 8
+  min_disk_gb: 20
+  recommended_disk_gb: 50
+  disk_check_path: "/opt"
+
+ports:
+  web: 8080
+  ssl: 8480
+  shutdown: 8005
+
+service:
+  name: "80_idaan_prod"
+  user: "idempiere"
+  type: "systemd"
+
+nginx:
+  enabled: true
+  domain: "prod.idaan.primware.net"
+  ssl_enabled: true
+
+idempiere:
+  download_url: ""
+  install_path: "/opt/sas/80_idaan_prod"
+
+install:
+  create_database: false
+  restore_database: false
+  create_service: false
+  configure_nginx: false
+
+dependencies:
+  install_missing: false
+  base: true
+  java: false
+  postgres: false
+  nginx: false
+  packages:
+    - curl
+    - wget
+    - unzip
+    - tar
+    - fontconfig
+    - git

@@ -1,0 +1,42 @@
+#idempiereEnv.properties Template
+
+IDEMPIERE_HOME={{ profile.idempiere.install_path }}
+JAVA_HOME={{ profile.java.home }}
+IDEMPIERE_JAVA_OPTIONS=-Xms1G -Xmx1G
+
+ADEMPIERE_DB_TYPE=PostgreSQL
+ADEMPIERE_DB_EXISTS=N
+ADEMPIERE_DB_PATH=postgresql
+ADEMPIERE_DB_SERVER={{ profile.database.host }}
+ADEMPIERE_DB_PORT={{ profile.database.port }}
+ADEMPIERE_DB_NAME={{ profile.database.name }}
+ADEMPIERE_DB_SYSTEM={{ profile.database.admin_user }}
+ADEMPIERE_DB_USER={{ profile.database.user }}
+ADEMPIERE_DB_PASSWORD={{ profile.database.password }}
+
+ADEMPIERE_APPS_SERVER=0.0.0.0
+ADEMPIERE_WEB_ALIAS=localhost
+ADEMPIERE_WEB_PORT={{ profile.ports.web }}
+ADEMPIERE_SSL_PORT={{ profile.ports.ssl }}
+
+ADEMPIERE_KEYSTORE={{ profile.idempiere.install_path }}/keystore/myKeystore
+ADEMPIERE_KEYSTOREWEBALIAS=adempiere
+ADEMPIERE_KEYSTORECODEALIAS=adempiere
+ADEMPIERE_KEYSTOREPASS=myPassword
+
+ADEMPIERE_CERT_CN=localhost
+ADEMPIERE_CERT_ORG=iDempiere Bazaar
+ADEMPIERE_CERT_ORG_UNIT=iDempiereUser
+ADEMPIERE_CERT_LOCATION=myTown
+ADEMPIERE_CERT_STATE=CA
+ADEMPIERE_CERT_COUNTRY=US
+
+ADEMPIERE_MAIL_SERVER=localhost
+ADEMPIERE_ADMIN_EMAIL=
+ADEMPIERE_MAIL_USER=
+ADEMPIERE_MAIL_PASSWORD=
+
+ADEMPIERE_FTP_SERVER=localhost
+ADEMPIERE_FTP_PREFIX=my
+ADEMPIERE_FTP_USER=anonymous
+ADEMPIERE_FTP_PASSWORD=user@host.com

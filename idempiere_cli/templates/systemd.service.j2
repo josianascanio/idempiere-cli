@@ -1,0 +1,15 @@
+[Unit]
+Description=iDempiere {{ profile.service.name }}
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User={{ profile.service.user }}
+WorkingDirectory={{ profile.idempiere.install_path }}
+Environment=JAVA_HOME={{ profile.java.home }}
+ExecStart={{ profile.idempiere.install_path }}/idempiere-server.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
