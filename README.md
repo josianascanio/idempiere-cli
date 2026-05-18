@@ -59,6 +59,8 @@ curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bo
 
 El `bootstrap.sh` instala las dependencias necesarias para ejecutar el CLI. Las dependencias propias de iDempiere, como Java, PostgreSQL, Nginx o `unzip`, se seleccionan y validan dentro de `idempiere-cli install`.
 
+Si `pipx` muestra un aviso indicando que `/root/.local/bin` no está en el `PATH`, normalmente puedes ignorarlo cuando usas `sudo bash`: el bootstrap crea un enlace global en `/usr/local/bin/idempiere-cli` y lo verifica al final.
+
 ## Instalación local editable
 
 ```bash

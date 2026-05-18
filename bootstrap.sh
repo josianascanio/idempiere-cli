@@ -85,6 +85,13 @@ install_cli() {
   pipx_cmd install "${REPO_URL}" --force
 }
 
+configure_pipx_path() {
+  # When bootstrap runs through sudo, pipx installs under /root/.local/bin and
+  # may warn that it is not on PATH. We still create /usr/local/bin below, but
+  # this reduces confusion on systems where pipx can update the global path.
+  pipx_cmd ensurepath --global >/dev/null 2>&1 || pipx_cmd ensurepath >/dev/null 2>&1 || true
+}
+
 resolve_cli_path() {
   local pipx_bin cli_path
   pipx_bin="$(pipx_cmd environment --value PIPX_BIN_DIR 2>/dev/null || true)"
@@ -114,19 +121,38 @@ link_cli() {
   fi
 }
 
+global_cli_path() {
+  if [[ -x /usr/local/bin/idempiere-cli ]]; then
+    echo "/usr/local/bin/idempiere-cli"
+    return 0
+  fi
+
+  resolve_cli_path
+}
+
+verify_cli() {
+  local cli_path
+  cli_path="$(global_cli_path)"
+  "${cli_path}" --help >/dev/null || die "idempiere-cli se instaló pero no pudo ejecutarse. Prueba: ${cli_path} --help"
+  log "Verificación correcta: ${cli_path} --help"
+}
+
 main() {
   print_banner
   install_cli_dependencies
   check_python_version
   install_cli
+  configure_pipx_path
   link_cli
+  verify_cli
 
   log "Instalación del CLI completada."
-  log "Prueba: idempiere-cli --help"
+  log "Prueba: /usr/local/bin/idempiere-cli --help"
+  log "Si pipx mostró un warning de PATH para /root/.local/bin, puedes ignorarlo: el comando global quedó enlazado en /usr/local/bin/idempiere-cli."
 
   if [[ "$#" -gt 0 ]]; then
     log "Ejecutando: idempiere-cli $*"
-    "$(resolve_cli_path)" "$@"
+    "$(global_cli_path)" "$@"
   fi
 }
 
