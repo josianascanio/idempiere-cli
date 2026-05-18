@@ -31,6 +31,34 @@ MVP funcional con:
 pipx install git+https://github.com/josianascanio/idempiere-cli.git
 ```
 
+## Instalación de un solo comando en servidor limpio
+
+Para instalar solo el CLI y sus dependencias mínimas (`python3`, `pip`, `venv`, `pipx`, `git`, `curl`, certificados):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash
+```
+
+Para instalar el CLI y abrir el instalador interactivo en la misma línea:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash -s -- install --interactive
+```
+
+Para probar sin tocar el servidor:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash -s -- install --interactive --dry-run
+```
+
+Para instalar iDempiere permitiendo que el CLI instale dependencias faltantes del servidor durante `install`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/josianascanio/idempiere-cli/main/bootstrap.sh | sudo bash -s -- install --interactive --install-dependencies
+```
+
+El `bootstrap.sh` instala las dependencias necesarias para ejecutar el CLI. Las dependencias propias de iDempiere, como Java, PostgreSQL, Nginx o `unzip`, se seleccionan y validan dentro de `idempiere-cli install`.
+
 ## Instalación local editable
 
 ```bash
