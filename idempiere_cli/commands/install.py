@@ -13,7 +13,7 @@ from rich.table import Table
 
 from idempiere_cli.commands.check import collect_checks, print_checks
 from idempiere_cli.core.config import derive_profile_values, load_profile
-from idempiere_cli.core.dependencies import detect_dependencies, install_apt_packages, missing_packages
+from idempiere_cli.core.dependencies import detect_dependencies, install_apt_packages, missing_packages, selected_postgres_version
 from idempiere_cli.core.detection import detect_installer
 from idempiere_cli.core.postgres import database_exists
 from idempiere_cli.core.shell import run_command, sudo_command
@@ -56,6 +56,8 @@ def planned_actions(profile: dict, packages: list[str]) -> list[str]:
     install_path = profile["idempiere"]["install_path"]
     actions = []
     if packages:
+        if selected_postgres_version(packages):
+            actions.append("Configurar repo oficial PostgreSQL PGDG si el paquete no está disponible")
         actions.append(f"Instalar dependencias con apt: {', '.join(packages)}")
     actions.extend(
         [

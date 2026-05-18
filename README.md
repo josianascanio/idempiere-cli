@@ -133,6 +133,8 @@ idempiere-cli install --interactive
 
 El CLI detecta faltantes y pregunta cuáles instalar.
 
+Si seleccionas `postgresql-15` y el paquete no existe en los repositorios base del sistema, el CLI configura automáticamente el repositorio oficial PostgreSQL PGDG antes de instalarlo.
+
 En modo perfil:
 
 ```yaml
