@@ -20,9 +20,9 @@ def get_listening_ports() -> list[str]:
     return []
 
 
-def validate_required_ports(web: int, ssl: int, shutdown: int, db: int | None = None) -> list[ValidationResult]:
+def validate_required_ports(web: int, ssl: int, db: int | None = None) -> list[ValidationResult]:
     results: list[ValidationResult] = []
-    for name, port in [("Web", web), ("SSL", ssl), ("Shutdown", shutdown)]:
+    for name, port in [("Web", web), ("SSL", ssl)]:
         if is_port_in_use(port):
             results.append(ValidationResult(f"Puerto {name}", "ERROR", f"{port} ocupado"))
         else:

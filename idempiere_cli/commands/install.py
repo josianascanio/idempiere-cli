@@ -46,7 +46,7 @@ def print_install_summary(profile: dict, installer: str, dry_run: bool, packages
     table.add_row("Ruta", profile["idempiere"]["install_path"])
     table.add_row("Download", profile["idempiere"]["download_url"])
     table.add_row("Base de datos", f"{profile['database']['name']} en {profile['database']['host']}:{profile['database']['port']}")
-    table.add_row("Puertos", f"web={profile['ports']['web']} ssl={profile['ports']['ssl']} shutdown={profile['ports']['shutdown']}")
+    table.add_row("Puertos", f"web={profile['ports']['web']} ssl={profile['ports']['ssl']}")
     table.add_row("Servicio", profile.get("service", {}).get("name", f"{profile['code']}_{profile['env']}"))
     table.add_row("Dependencias faltantes a instalar", ", ".join(packages) if packages else "ninguna")
     console.print(table)

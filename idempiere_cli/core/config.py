@@ -33,8 +33,8 @@ def default_profile(version: int = 12) -> dict[str, Any]:
     return {
         "version": version,
         "installer": "auto",
-        "code": "90",
-        "env": "idempiere_test",
+        "code": "80",
+        "env": "idempiere",
         "base_dir": "/opt/sas",
         "java": {"home": f"/usr/lib/jvm/java-{required_java}-openjdk-amd64", "required_version": required_java},
         "database": {
@@ -42,18 +42,18 @@ def default_profile(version: int = 12) -> dict[str, Any]:
             "version": 15,
             "host": "localhost",
             "port": 5432,
-            "name": "90_idempiere_test",
+            "name": "80_idempiere",
             "user": "adempiere",
             "password": "adempiere",
             "admin_user": "postgres",
         },
         "resources": {"min_ram_gb": 4, "recommended_ram_gb": 8, "min_disk_gb": 20, "recommended_disk_gb": 50, "disk_check_path": "/opt"},
-        "ports": {"web": 8090, "ssl": 8490, "shutdown": 8005},
-        "service": {"name": "90_idempiere_test", "user": "idempiere", "type": "systemd"},
+        "ports": {"web": 8080, "ssl": 8480},
+        "service": {"name": "80_idempiere", "user": "idempiere", "type": "systemd"},
         "nginx": {"enabled": False, "domain": "test.example.com", "ssl_enabled": False},
         "idempiere": {
             "download_url": "https://sourceforge.net/projects/idempiere/files/v12/daily-server/idempiereServer12Daily.gtk.linux.x86_64.zip/download",
-            "install_path": "/opt/sas/90_idempiere_test",
+            "install_path": "/opt/sas/80_idempiere",
         },
         "install": {"create_database": True, "restore_database": False, "create_service": True, "configure_nginx": False},
         "dependencies": {"install_missing": False, "base": True, "java": True, "postgres": True, "nginx": False, "packages": ["curl", "wget", "unzip", "tar", "fontconfig", "git"]},
@@ -68,4 +68,6 @@ def derive_profile_values(profile: dict[str, Any]) -> dict[str, Any]:
     profile.setdefault("idempiere", {})["install_path"] = install_path
     profile.setdefault("database", {}).setdefault("name", f"{code}_{env}")
     profile.setdefault("service", {}).setdefault("name", f"{code}_{env}")
+    profile.setdefault("ports", {}).setdefault("web", int(f"80{code}"))
+    profile.setdefault("ports", {}).setdefault("ssl", int(f"84{code}"))
     return profile

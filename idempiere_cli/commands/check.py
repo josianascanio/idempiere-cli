@@ -34,7 +34,7 @@ def collect_checks(profile: dict, installer: str | None = None) -> list[Validati
     results.append(validate_postgres(13))
     results.append(validate_java_for_idempiere(int(profile["version"])))
     ports = profile["ports"]
-    results.extend(validate_required_ports(ports["web"], ports["ssl"], ports["shutdown"], profile["database"].get("port")))
+    results.extend(validate_required_ports(ports["web"], ports["ssl"], profile["database"].get("port")))
     results.append(ValidationResult("Nginx", "OK" if command_exists("nginx") else "WARNING", "instalado" if command_exists("nginx") else "no instalado"))
     base_dir = Path(profile["base_dir"])
     if base_dir.exists():

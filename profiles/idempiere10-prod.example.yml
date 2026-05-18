@@ -28,7 +28,6 @@ resources:
 ports:
   web: 8080
   ssl: 8480
-  shutdown: 8005
 
 service:
   name: "80_idaan_prod"

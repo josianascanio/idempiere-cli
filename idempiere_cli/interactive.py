@@ -6,6 +6,7 @@ import typer
 from InquirerPy import inquirer
 from rich.console import Console
 from rich.panel import Panel
+from rich.table import Table
 
 from idempiere_cli.core.config import default_profile
 from idempiere_cli.core.dependencies import detect_dependencies, missing_packages
@@ -33,18 +34,30 @@ def build_interactive_profile() -> tuple[dict, list[str]]:
         default=installer or "auto",
     ).execute()
     profile["code"] = inquirer.text(message="Código ambiente", default=profile["code"]).execute()
+    if not str(profile["code"]).isdigit():
+        console.print(Panel("El código ambiente debe ser numérico porque se usa para derivar puertos y nombres.", style="red"))
+        raise typer.Exit(code=1)
     profile["env"] = inquirer.text(message="Nombre ambiente", default=profile["env"]).execute()
     profile["base_dir"] = inquirer.text(message="Directorio base", default=profile["base_dir"]).execute()
-    install_path = f"{profile['base_dir']}/{profile['code']}_{profile['env']}"
-    profile["idempiere"]["install_path"] = inquirer.text(message="Ruta instalación", default=install_path).execute()
-    profile["database"]["name"] = inquirer.text(message="Nombre base de datos", default=f"{profile['code']}_{profile['env']}").execute()
+    environment_name = f"{profile['code']}_{profile['env']}"
+    profile["idempiere"]["install_path"] = f"{profile['base_dir']}/{environment_name}"
+    profile["database"]["name"] = environment_name
+    profile["service"]["name"] = environment_name
+    profile["ports"]["web"] = int(f"80{profile['code']}")
+    profile["ports"]["ssl"] = int(f"84{profile['code']}")
     profile["database"]["host"] = inquirer.text(message="Host PostgreSQL", default=profile["database"]["host"]).execute()
     profile["database"]["port"] = int(inquirer.text(message="Puerto PostgreSQL", default=str(profile["database"]["port"])).execute())
     profile["database"]["user"] = inquirer.text(message="Usuario DB", default=profile["database"]["user"]).execute()
     profile["database"]["password"] = inquirer.secret(message="Password DB", default=profile["database"]["password"]).execute()
-    profile["ports"]["web"] = int(inquirer.text(message="Puerto web", default=str(profile["ports"]["web"])).execute())
-    profile["ports"]["ssl"] = int(inquirer.text(message="Puerto SSL", default=str(profile["ports"]["ssl"])).execute())
-    profile["ports"]["shutdown"] = int(inquirer.text(message="Puerto shutdown", default=str(profile["ports"]["shutdown"])).execute())
+    table = Table(title="Valores calculados")
+    table.add_column("Campo", style="cyan")
+    table.add_column("Valor")
+    table.add_row("Ambiente", environment_name)
+    table.add_row("Ruta instalación", profile["idempiere"]["install_path"])
+    table.add_row("Base de datos", profile["database"]["name"])
+    table.add_row("Puerto web", str(profile["ports"]["web"]))
+    table.add_row("Puerto SSL", str(profile["ports"]["ssl"]))
+    console.print(table)
     deps = detect_dependencies(profile["java"]["required_version"], profile["database"]["version"], False)
     missing = missing_packages(deps)
     selected: list[str] = []
@@ -68,6 +81,7 @@ def run_main_menu(help_text: str) -> None:
     from idempiere_cli.commands.install import execute_install
 
     while True:
+        console.print(Panel("Selecciona una acción. Las opciones de detección y validación regresan al menú automáticamente.", title="Menú principal", style="cyan"))
         action = inquirer.select(
             message="¿Qué quieres hacer?",
             choices=[
@@ -82,23 +96,30 @@ def run_main_menu(help_text: str) -> None:
             ],
         ).execute()
 
-        if action == "Detectar infraestructura":
-            detect_command()
-        elif action == "Validar servidor":
-            check_command(profile=None, target_version=12, installer=None)
-        elif action == "Instalar iDempiere interactivo":
-            execute_install(interactive=True, dry_run=False)
-        elif action == "Simular instalación interactiva (--dry-run)":
-            execute_install(interactive=True, dry_run=True)
-        elif action == "Instalar desde perfil YAML":
-            execute_install(profile=_ask_profile_path(), dry_run=False)
-        elif action == "Simular desde perfil YAML (--dry-run)":
-            execute_install(profile=_ask_profile_path(), dry_run=True)
-        elif action == "Ver ayuda":
-            console.print(help_text)
-        elif action == "Salir":
-            console.print("Saliendo de idempiere-cli.")
-            return
+        try:
+            if action == "Detectar infraestructura":
+                detect_command()
+            elif action == "Validar servidor":
+                check_command(profile=None, target_version=12, installer=None)
+            elif action == "Instalar iDempiere interactivo":
+                execute_install(interactive=True, dry_run=False)
+            elif action == "Simular instalación interactiva (--dry-run)":
+                execute_install(interactive=True, dry_run=True)
+            elif action == "Instalar desde perfil YAML":
+                execute_install(profile=_ask_profile_path(), dry_run=False)
+            elif action == "Simular desde perfil YAML (--dry-run)":
+                execute_install(profile=_ask_profile_path(), dry_run=True)
+            elif action == "Ver ayuda":
+                console.print(help_text)
+            elif action == "Salir":
+                console.print("Saliendo de idempiere-cli.")
+                return
+        except typer.Exit as exc:
+            if exc.exit_code not in (None, 0):
+                console.print(Panel("La acción terminó con errores. Revisa los mensajes anteriores.", style="yellow"))
+        except Exception as exc:
+            console.print(Panel(f"Error: {exc}", style="red"))
 
-        if action != "Salir" and not inquirer.confirm(message="¿Volver al menú principal?", default=True).execute():
-            return
+        if action in {"Instalar iDempiere interactivo", "Instalar desde perfil YAML"}:
+            if not inquirer.confirm(message="¿Volver al menú principal?", default=True).execute():
+                return

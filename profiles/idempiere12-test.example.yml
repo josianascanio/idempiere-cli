@@ -1,7 +1,7 @@
 version: 12
 installer: "auto"
-code: "90"
-env: "idaan_test"
+code: "80"
+env: "idempiere"
 base_dir: "/opt/sas"
 
 java:
@@ -13,7 +13,7 @@ database:
   version: 15
   host: "localhost"
   port: 5432
-  name: "90_idaan_test"
+  name: "80_idempiere"
   user: "adempiere"
   password: "adempiere"
   admin_user: "postgres"
@@ -26,23 +26,22 @@ resources:
   disk_check_path: "/opt"
 
 ports:
-  web: 8090
-  ssl: 8490
-  shutdown: 8005
+  web: 8080
+  ssl: 8480
 
 service:
-  name: "90_idaan_test"
+  name: "80_idempiere"
   user: "idempiere"
   type: "systemd"
 
 nginx:
   enabled: false
-  domain: "test.idaan.primware.net"
+  domain: "idempiere.example.com"
   ssl_enabled: false
 
 idempiere:
   download_url: "https://sourceforge.net/projects/idempiere/files/v12/daily-server/idempiereServer12Daily.gtk.linux.x86_64.zip/download"
-  install_path: "/opt/sas/90_idaan_test"
+  install_path: "/opt/sas/80_idempiere"
 
 install:
   create_database: true

@@ -36,7 +36,7 @@ def detect_command() -> None:
     javas = get_installed_javas()
     table.add_row("JAVA_HOME candidatos", "\n".join(javas) if javas else "no detectados")
     table.add_row("Nginx", "instalado" if command_exists("nginx") else "no detectado")
-    relevant_ports = [line for line in get_listening_ports() if any(f":{port}" in line for port in [8080, 8090, 8480, 8490, 5432, 5433, 8005])]
+    relevant_ports = [line for line in get_listening_ports() if any(f":{port}" in line for port in [8080, 8480, 5432, 5433])]
     table.add_row("Puertos relevantes", "\n".join(relevant_ports[:8]) if relevant_ports else "sin puertos relevantes detectados")
     table.add_row("Instalador recomendado", str(summary["recommended_installer"] or "WARNING: selección manual requerida"))
     table.add_row("Razón", str(summary["installer_reason"]))

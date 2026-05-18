@@ -196,7 +196,7 @@ Valida:
 - Disco mínimo y recomendado.
 - PostgreSQL.
 - Java requerido.
-- Puertos web, SSL, shutdown y DB.
+- Puertos web, SSL y DB.
 - Nginx.
 - Directorio base.
 - Comandos requeridos: `curl`, `wget`, `unzip`, `tar`, `git`, `psql`, `pg_dump`, `pg_restore`, `systemctl`, `ss`.
@@ -213,13 +213,28 @@ Campos importantes:
 
 - `version`: versión iDempiere.
 - `installer`: `auto`, `12-x86`, `12-arm`, `12-debian`.
-- `code` y `env`: forman nombres como `90_idaan_test`.
+- `code` y `env`: forman nombres como `80_idempiere`.
 - `base_dir`: base de instalación, por ejemplo `/opt/sas`.
 - `java.home`: `JAVA_HOME` para `idempiereEnv.properties`.
 - `database`: conexión y nombre de base.
-- `ports`: puertos web, SSL y shutdown.
+- `ports`: puertos web y SSL. Se derivan con `80{code}` y `84{code}` en el modo interactivo.
 - `idempiere.download_url`: ZIP de iDempiere.
 - `dependencies.install_missing`: permite instalar faltantes durante `install`.
+
+En modo interactivo, estos valores se calculan automáticamente y no se preguntan:
+
+- Ruta de instalación: `{base_dir}/{code}_{env}`.
+- Base de datos: `{code}_{env}`.
+- Servicio: `{code}_{env}`.
+- Puerto web: `80{code}`.
+- Puerto SSL: `84{code}`.
+
+Con los defaults `code=80`, `env=idempiere` y `base_dir=/opt/sas`, el CLI propone:
+
+- Ruta: `/opt/sas/80_idempiere`.
+- Base de datos: `80_idempiere`.
+- Puerto web: `8080`.
+- Puerto SSL: `8480`.
 
 ## Instalación iDempiere 12 con perfil
 
