@@ -175,14 +175,14 @@ def perform_install(profile: dict, packages: list[str], dry_run: bool, force: bo
     _create_systemd_service(profile, dry_run=False)
 
 
-def install_command(
-    profile: Path | None = typer.Option(None, "--profile", "-p", help="Perfil YAML."),
-    interactive: bool = typer.Option(False, "--interactive", help="Construir perfil interactivo."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Mostrar acciones sin aplicar cambios."),
-    force: bool = typer.Option(False, "--force", help="Permitir sobrescrituras controladas."),
-    installer: str | None = typer.Option(None, "--installer", help="Forzar instalador: 12-x86, 12-arm o 12-debian."),
-    auto_detect: bool = typer.Option(False, "--auto-detect", help="Forzar detección automática de instalador."),
-    install_dependencies: bool | None = typer.Option(None, "--install-dependencies/--no-install-dependencies", help="Instalar dependencias faltantes."),
+def execute_install(
+    profile: Path | None = None,
+    interactive: bool = False,
+    dry_run: bool = False,
+    force: bool = False,
+    installer: str | None = None,
+    auto_detect: bool = False,
+    install_dependencies: bool | None = None,
 ) -> None:
     if interactive:
         data, selected_packages = build_interactive_profile()
@@ -192,6 +192,9 @@ def install_command(
     else:
         raise typer.BadParameter("Usa --profile o --interactive")
     data = derive_profile_values(data)
+    if int(data.get("version", 0)) != 12:
+        console.print("[red]ERROR:[/red] Por ahora la instalación real/interactiva solo soporta iDempiere 12. iDempiere 10, 11 y 13 se agregarán después.")
+        raise typer.Exit(code=1)
     selected_installer = resolve_installer(data, installer, auto_detect)
     deps = detect_dependencies(data["java"].get("required_version", 17), data["database"].get("version", 15), data.get("nginx", {}).get("enabled", False))
     missing = missing_packages(deps)
@@ -225,3 +228,23 @@ def install_command(
         raise typer.Exit()
     perform_install(data, packages, dry_run=False, force=force)
     console.print(Panel("Instalación finalizada.", style="green"))
+
+
+def install_command(
+    profile: Path | None = typer.Option(None, "--profile", "-p", help="Perfil YAML."),
+    interactive: bool = typer.Option(False, "--interactive", help="Construir perfil interactivo."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Mostrar acciones sin aplicar cambios."),
+    force: bool = typer.Option(False, "--force", help="Permitir sobrescrituras controladas."),
+    installer: str | None = typer.Option(None, "--installer", help="Forzar instalador: 12-x86, 12-arm o 12-debian."),
+    auto_detect: bool = typer.Option(False, "--auto-detect", help="Forzar detección automática de instalador."),
+    install_dependencies: bool | None = typer.Option(None, "--install-dependencies/--no-install-dependencies", help="Instalar dependencias faltantes."),
+) -> None:
+    execute_install(
+        profile=profile,
+        interactive=interactive,
+        dry_run=dry_run,
+        force=force,
+        installer=installer,
+        auto_detect=auto_detect,
+        install_dependencies=install_dependencies,
+    )

@@ -78,12 +78,17 @@ También puedes usar:
 ## Uso básico
 
 ```bash
+idempiere-cli
 idempiere-cli --help
 idempiere-cli detect
 idempiere-cli check
 idempiere-cli install --interactive --dry-run
 idempiere-cli install --profile profiles/idempiere12-test.example.yml --dry-run
 ```
+
+Si ejecutas `idempiere-cli` sin argumentos, se abre un menú interactivo para detectar infraestructura, validar el servidor, instalar iDempiere o simular una instalación con `--dry-run`.
+
+Por ahora el instalador interactivo solo permite iDempiere 12. El soporte para iDempiere 10, 11 y 13 se agregará en fases posteriores con sus dependencias específicas.
 
 ## Qué hace `--dry-run`
 
